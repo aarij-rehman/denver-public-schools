@@ -1,6 +1,4 @@
-__pycache__/preprocessing.cpython-37.pyc
 .ipynb_checkpoints/phase1-checkpoint.ipynb
-.vscode/launch.json
-.vscode/settings.json
+*.json
 .DS_Store
-__pycache__/Graph.cpython-37.pyc
+*.pyc

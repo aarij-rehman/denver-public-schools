@@ -1,64 +1,45 @@
 # A graph class used to keep track of routes and execute the savings algorithm 
+import pandas as pd
 class Graph:
-    prepsites = []  # A list of the prepsites 
-    arcs = set()    # A set of the arcs in the graph rn
-    route = {}      # Dictionary that holds lists (adjaceny list) - 0 if two nodes are not in the same route, 1 otherwise
-    depot = 0       # The school code for the depot
+    segments = []
+    distance = lambda: True
+    routes = {}
 
-    def __init__(self, prep, depot):
-        self.prepsites = prep
-        self.arcs = set()
-        self.depot = depot            
-        for i in prep:
-            if i != depot:
-                self.arcs.add((i,depot))
-                self.arcs.add((depot,i))
-                self.route[i] = []
-
-    def add_arc(self, arc):
-        self.arcs.add(arc)
-        newroute = list(set(self.route[arc[0]] + self.route[arc[1]] + [arc[0]] + [arc[1]]))
-        self.route[arc[0]] = newroute
-        self.route[arc[1]] = newroute       
-        for node in newroute:
-            self.route[node] = newroute
-            
-    def remove_arc(self, arc):
-        self.arcs.remove(arc)
-
-    def is_node_interior(self, node):
-        node_depot = (node, self.depot)
-        depot_node = (self.depot, node)
-        return not ((node_depot in self.arcs) or (depot_node in self.arcs))
-
-    def on_same_route(self, arc):
-        return arc[1] in self.route[arc[0]]
-
-    def is_arc_interior(self, arc):
-        node1 = self.is_node_interior(arc[0])
-        node2 = self.is_node_interior(arc[1])
-        return (not node1) and (not node2)
+    def __init__(self, segments: list, distance):
+        self.segments = segments
+        self.distance = distance
+        for i in (range(len(segments))):
+            self.routes[i] = [i]
+        
+    def is_trivial(self, segment_indx):
+        if (segment_indx not in self.routes) or (self.routes[segment_indx] != [segment_indx]):
+            return False
+        return True
     
-    def merge(self, arc):
-        if (arc[0],self.depot) in self.arcs:
-            if (arc[1], self.depot) in self.arcs:
-                self.remove_arc((arc[0], self.depot))
-                self.remove_arc((arc[1], self.depot))
-                self.add_arc(arc)
-                return
-            if (self.depot, arc[1]) in self.arcs:
-                self.remove_arc((arc[0], self.depot))
-                self.remove_arc((self.depot, arc[1]))
-                self.add_arc(arc)
-                return
-        if (self.depot, arc[0]) in self.arcs:
-            if (arc[1], self.depot) in self.arcs:
-                self.remove_arc((self.depot, arc[0]))
-                self.remove_arc((arc[1], self.depot))
-                self.add_arc(arc)
-                return
-            if (self.depot, arc[1]) in self.arcs:
-                self.remove_arc((self.depot, arc[0]))
-                self.remove_arc((self.depot, arc[1]))
-                self.add_arc(arc)
-                return   
+    def merge_is_feasible(self, segment_indx1, segment_indx2):
+        if not (self.is_trivial(segment_indx1) or self.is_trivial(segment_indx2)):
+            return False
+        pot_route = [ self.segments[i] for i in (self.routes[segment_indx1] + self.routes[segment_indx2]) ]
+        pot_route.sort(key=lambda seg: (seg.time_window[0], seg.time_window[1]))
+        return self.route_simulator(pot_route)
+        
+    def route_simulator(self, route):
+        current_time = pd.to_datetime('6:00 AM')
+        current_location = 0
+        for seg in route:
+            current_time = current_time + pd.Timedelta(self.distance(current_location, seg.prep), unit="min")
+            if current_time < seg.time_window[0]:
+                current_time = seg.time_window[0]
+            if current_time > seg.time_window[1]:
+                return False
+            current_time = current_time + pd.Timedelta(seg.service_time, unit="min")
+            current_location = seg.prep
+        return True
+
+    def merge(self, segment_indx1, segment_indx2):
+        if self.merge_is_feasible(segment_indx1, segment_indx2):
+            newroute = self.routes[segment_indx1] + self.routes[segment_indx2]
+            self.routes[segment_indx1] = newroute
+            self.routes[segment_indx2] = newroute
+            for seg_indx in newroute:
+                self.routes[seg_indx] = newroute
