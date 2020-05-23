@@ -5,7 +5,7 @@ class Graph:
     distance = lambda: True
     routes = {}
 
-    def __init__(self, segments: list, distance):
+    def __init__(self, segments, distance):
         self.segments = segments
         self.distance = distance
         for i in (range(len(segments))):
@@ -16,8 +16,11 @@ class Graph:
             return False
         return True
     
+    def on_same_route(self, segment_indx1, segment_indx2):
+        return segment_indx2 in self.routes[segment_indx1]
+    
     def merge_is_feasible(self, segment_indx1, segment_indx2):
-        if not (self.is_trivial(segment_indx1) or self.is_trivial(segment_indx2)):
+        if self.on_same_route(segment_indx1, segment_indx2):
             return False
         pot_route = [ self.segments[i] for i in (self.routes[segment_indx1] + self.routes[segment_indx2]) ]
         pot_route.sort(key=lambda seg: (seg.time_window[0], seg.time_window[1]))

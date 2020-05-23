@@ -10,5 +10,3 @@ class Segment:
         self.prep = prep_
         self.carry1 = carry1_
         self.carry2 = carry2_
-
-
