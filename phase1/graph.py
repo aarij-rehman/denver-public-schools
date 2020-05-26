@@ -11,22 +11,17 @@ class Graph:
         for i in (range(len(segments))):
             self.routes[i] = [i]
         
-    def is_trivial(self, segment_indx):
-        if (segment_indx not in self.routes) or (self.routes[segment_indx] != [segment_indx]):
-            return False
-        return True
-    
-    def on_same_route(self, segment_indx1, segment_indx2):
+    def _on_same_route(self, segment_indx1, segment_indx2):
         return segment_indx2 in self.routes[segment_indx1]
     
-    def merge_is_feasible(self, segment_indx1, segment_indx2):
-        if self.on_same_route(segment_indx1, segment_indx2):
+    def _merge_is_feasible(self, segment_indx1, segment_indx2):
+        if self._on_same_route(segment_indx1, segment_indx2):
             return False
         pot_route = [ self.segments[i] for i in (self.routes[segment_indx1] + self.routes[segment_indx2]) ]
         pot_route.sort(key=lambda seg: (seg.time_window[0], seg.time_window[1]))
-        return self.route_simulator(pot_route)
+        return self._route_simulator(pot_route)
         
-    def route_simulator(self, route):
+    def _route_simulator(self, route):
         current_time = pd.to_datetime('6:00 AM')
         current_location = 0
         for seg in route:
@@ -40,9 +35,16 @@ class Graph:
         return True
 
     def merge(self, segment_indx1, segment_indx2):
-        if self.merge_is_feasible(segment_indx1, segment_indx2):
+        if self._merge_is_feasible(segment_indx1, segment_indx2):
             newroute = self.routes[segment_indx1] + self.routes[segment_indx2]
             self.routes[segment_indx1] = newroute
             self.routes[segment_indx2] = newroute
             for seg_indx in newroute:
                 self.routes[seg_indx] = newroute
+
+    def get_routes(self):
+        ret = []
+        for i in self.routes:
+            if self.routes[i] not in ret:
+                ret.append(self.routes[i])
+        return ret
