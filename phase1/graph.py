@@ -1,5 +1,6 @@
 # A graph class used to keep track of routes and execute the savings algorithm 
 import pandas as pd
+from segment import Segment 
 class Graph:
     segments = []
     distance = lambda: True
@@ -22,16 +23,18 @@ class Graph:
         return self._route_simulator(pot_route)
         
     def _route_simulator(self, route):
-        current_time = pd.to_datetime('6:00 AM')
-        current_location = 0
+        current_time = pd.to_datetime('5:30 AM')
+        current_location = Segment(0,0,0)
         for seg in route:
-            current_time = current_time + pd.Timedelta(self.distance(current_location, seg.prep), unit="min")
+            to_carry1 = self.distance(current_location.carry1, seg.prep)
+            to_carry2 = self.distance(current_location.carry2, seg.prep) if current_location.carry2 else 9999
+            current_time = current_time + pd.Timedelta(min(to_carry1,to_carry2), unit="min")
             if current_time < seg.time_window[0]:
                 current_time = seg.time_window[0]
             if current_time > seg.time_window[1]:
                 return False
             current_time = current_time + pd.Timedelta(seg.service_time, unit="min")
-            current_location = seg.prep
+            current_location = seg
         return True
 
     def merge(self, segment_indx1, segment_indx2):
